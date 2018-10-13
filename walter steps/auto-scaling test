@@ -1,0 +1,44 @@
+my setup and test , 
+
+happywalter@cloudshell:~ (walter-terraform)$ riff version
+Version
+  riff cli: 0.1.3 (a216005db0d50056c41b45fdc3384b09ad24381d)	
+	
+see below for the auto-scaling when function is invoked !
+
+1/ before I invoke any function, no functions pods running (it really can scale to ZERO !) 
+
+happywalter@cloudshell:~ (walter-terraform)$ kubectl get pods
+NAME                  READY     STATUS      RESTARTS   AGE
+square-00001-2n4b7    0/1       Completed   0          18m
+square2-00001-wpjb2   0/1       Completed   0          51m
+
+2/ then send in a request to function square, which will just print my name. 
+happywalter@cloudshell:~ (walter-terraform)$ riff service invoke square --text -- -w '\n' -d 3
+curl 35.202.161.204/ -H 'Host: square.default.example.com' -H 'Content-Type: text/plain' -w '\n' -d 3
+
+Walter Lee first Knative serverless function with riff !
+(see github change at https://github.com/leewalter/node-square/blob/master/square.js ) 
+
+3/ check pods, you can see square function has 3 pods running now below, 
+
+happywalter@cloudshell:~ (walter-terraform)$ kubectl get pods
+NAME                                      READY     STATUS      RESTARTS   AGE
+square-00001-2n4b7                        0/1       Completed   0          19m
+square-00001-deployment-f64cfc8fc-spnvb   **3/3**       Running     0          42s
+square2-00001-wpjb2                       0/1       Completed   0          52m
+
+4/ then invoke square2 function, which I changed to cube instead of square, 
+
+happywalter@cloudshell:~ (walter-terraform)$ riff service invoke square2 --text -- -w '\n' -d 3
+curl 35.202.161.204/ -H 'Host: square2.default.example.com' -H 'Content-Type: text/plain' -w '\n' -d 3
+27
+
+5/ then check pods again, you will see pods = 3 for function square now ! 
+
+happywalter@cloudshell:~ (walter-terraform)$ kubectl get pods
+NAME                                        READY     STATUS      RESTARTS   AGE
+square-00001-2n4b7                          0/1       Completed   0          20m
+square-00001-deployment-f64cfc8fc-spnvb     3/3       Running     0          1m
+square2-00001-deployment-58d5d584d8-sgdr2   **3/3**       Running     0          52s
+square2-00001-wpjb2                         0/1       Completed   0          53m
